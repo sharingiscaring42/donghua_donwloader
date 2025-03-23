@@ -16,7 +16,7 @@ A Python tool to automatically fetch, resolve, and download episodes of donghua 
 
 1. **Clone the project**
 ```bash
-   git clone https://github.com/your-username/donghua-downloader.git
+   git clone https://github.com/sharingiscaring42/donghua-downloader.git
    cd donghua-downloader
 ```
 2. **Create a virtual environment (optional but recommended)**

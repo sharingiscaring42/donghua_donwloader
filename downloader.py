@@ -7,7 +7,6 @@ from tqdm import tqdm
 from playwright.sync_api import sync_playwright
 
 def extract_links_episode(link_serie):
-    # url = "https://animexin.dev/btth-season-5/"
     response = requests.get(link_serie)
     soup = BeautifulSoup(response.content, "html.parser")
 
