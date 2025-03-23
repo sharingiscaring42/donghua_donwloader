@@ -65,7 +65,13 @@ The file folder will look like this:
 ```bash
     python3 add_to_config.py --link https://animexin.dev/throne-of-seal/ --ep 100
 ```
-7. **Relaunch every 4h**
+
+7. **Simple manual launch**
+```bash
+    python3 downloader.py
+```
+
+8. **Relaunch every 4h**
 
 ***Relaunch Option 1: cron (linux)***
 ```bash
@@ -75,9 +81,11 @@ The file folder will look like this:
 where you edit the path for downloader and the path log
 
 ***Relaunch Option 2: pm2***
+
 install npm then pm2 (google it)
 put yourself inside this folder 
 link to the env with full path if you created one
+
 ```bash
     pm2 start downloader.py --name donghua-downloader --interpreter python3 --cron "0 */4 * * *"
 ```
