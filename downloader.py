@@ -15,19 +15,19 @@ def extract_links_episode(link_serie):
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
         title_num = a_tag.find("div", class_="epl-num")
-        
+
         if title_num:  # Make sure the div exists
             episode_number = title_num.text.strip()
             episodes[episode_number] = href  # Use the cleaned-up number as key
 
     # for num,link in episodes.items():
     #     print(num,link)
-    
+
     return episodes
 
 def filter_link_episode(link_serie, last_episode):
     episodes = extract_links_episode(link_serie)
-    
+
     # Convert keys to integers for comparison
     filtered = {
         ep_num: link
@@ -39,7 +39,7 @@ def filter_link_episode(link_serie, last_episode):
 
 def extract_mediafire_1080p_link(episode_url):
     response = requests.get(episode_url)
-    
+
     if response.status_code != 200:
         print(f"❌ Failed to load page, status code: {response.status_code}")
         return None
@@ -85,30 +85,64 @@ def get_new_mediafire_links(series_url, last_seen_episode):
             }
         else:
             print(f"Episode {ep} - ❌ Mediafire 1080p link not found from this page {link}")
-    
+
     return results
 
 
 
-def get_true_mediafire_link_playwright(url, headless):
+# def get_true_mediafire_link_playwright(url, headless):
+#     with sync_playwright() as p:
+#         browser = p.chromium.launch(headless=headless)  # 👈 Turn off headless to test
+#         context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+#         page = context.new_page()
+#         print(f"🔍 Navigating to: {url}")
+#         page.goto(url)
+
+#         try:
+#             page.wait_for_selector("#downloadButton", timeout=30000)
+#             link = page.query_selector("#downloadButton").get_attribute("href")
+#             print(f"✅ Found direct link: {link}")
+#             return link
+#         except Exception as e:
+#             print("❌ Still blocked:", e)
+#             page.screenshot(path="cloudflare_block.png", full_page=True)
+#             return None
+#         finally:
+#             browser.close()
+
+def get_true_mediafire_link_playwright(url, headless=True):
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=headless)  # 👈 Turn off headless to test
-        context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+        browser = p.chromium.launch(headless=headless)
+        context = browser.new_context(user_agent=(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        ))
         page = context.new_page()
         print(f"🔍 Navigating to: {url}")
-        page.goto(url)
+        page.goto(url, wait_until="networkidle")
 
         try:
+            # Wait until the button exists and is visible
             page.wait_for_selector("#downloadButton", timeout=30000)
-            link = page.query_selector("#downloadButton").get_attribute("href")
-            print(f"✅ Found direct link: {link}")
-            return link
+            download_btn = page.query_selector("#downloadButton")
+
+            # Retry up to 10 seconds if href is still a placeholder
+            for i in range(10):
+                href = download_btn.get_attribute("href")
+                if href and href != "#":
+                    print(f"✅ Found direct download link: {href}")
+                    return href
+                print(f"⏳ Waiting for real link to appear... ({i+1}/10)")
+                time.sleep(1)
+
+            print("❌ Timeout: Button appeared but no valid download link.")
         except Exception as e:
-            print("❌ Still blocked:", e)
-            page.screenshot(path="cloudflare_block.png", full_page=True)
-            return None
+            print("❌ Error occurred:", e)
+            page.screenshot(path="mediafire_debug.png", full_page=True)
         finally:
             browser.close()
+
+        return None
 
 def download_file(url, filename):
     with requests.get(url, stream=True) as r:
@@ -261,5 +295,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
